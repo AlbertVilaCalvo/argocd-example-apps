@@ -1,0 +1,25 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-migration
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
+spec:
+  # If the job fails, Argo CD will retry it 2 times before consider it failed.
+  # Since this is a PreSync hook, if the job fails the deployment will not take
+  # place and the sync operation will be marked as failed.
+  backoffLimit: 2
+  template:
+    spec:
+      # We want the job to run only once and exit with an exit code, instead of being
+      # restarted if it fails. If we set it to Always, the job will be restarted
+      # indefinitely until it succeeds.
+      restartPolicy: Never
+      containers:
+        - name: migration
+          image: busybox
+          command:
+            - 'sh'
+            - '-c'
+            - "echo 'Running db migration...'; sleep 10; echo 'Done!'"
